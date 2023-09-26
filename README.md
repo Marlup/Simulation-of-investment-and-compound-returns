@@ -53,7 +53,7 @@ print("Periodic Earnings:", periodic_earnings)
 
 ## Examples
 
-You can find example usage of this script in the examples directory. Each example demonstrates a different investment scenario and provides detailed usage instructions.
+You can find example usage of this script in the examples directory. There is one example that demonstrates an investment scenario and provides detailed usage instructions.
 
 ## License
 
