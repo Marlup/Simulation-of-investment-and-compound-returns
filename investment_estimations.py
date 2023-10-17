@@ -95,8 +95,8 @@ def define_scenario(initial_amounts,
                     inflation_rates,
                     retir_years=20,
                     retir_incomes=1000,
-                    retir_contribs_ratio=0.5,
-                    min_investment=10):
+                    retir_contribs_ratio=0.5
+                   ):
     
     accumulated_money = {}
 
@@ -113,7 +113,6 @@ def define_scenario(initial_amounts,
                                     compounding_frequency=term,
                                     annual_contribution=contribution,
                                     investment_duration=year,
-                                    min_investment_amount=min_investment,
                                     retirement_duration=retir_years,
                                     retirement_income=retir_income,
                                     retirement_contribution=contribution * retir_contribs_ratio,
