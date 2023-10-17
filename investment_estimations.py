@@ -69,7 +69,7 @@ def calculate_return_on_investment(principal,
             
             current_balance += monthly_contribution
             
-            if not on_retirement and retirement_at_months > 0:
+            if not on_retirement:
                 if time_counter >= retirement_at_months:
                     if not on_retirement:
                         on_retirement = True
