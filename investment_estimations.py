@@ -8,12 +8,13 @@ import scipy
 DEFAULT_RETIREMENT_YEARS = 30
 MONTHS_IN_YEAR = 12
 
-def get_accumulated_return(principal, 
-                           annual_roi,
-                           compounding_frequency,
-                           annual_contribution, 
-                           investment_duration, 
-                           return_accum_roi=False):
+def get_compound_return(principal, 
+                        annual_roi,
+                        compounding_frequency,
+                        annual_contribution, 
+                        investment_duration, 
+                        return_accum_roi=False
+                       ):
     # Calculate the ROI for each compounding period
     term_roi = annual_roi / compounding_frequency
     # Calculate the periodic contribution
