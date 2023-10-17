@@ -13,7 +13,7 @@ def calculate_accumulated_return(principal,
                                  compounding_frequency,
                                  annual_contribution, 
                                  investment_duration, 
-                                 return_acum_roi=False):
+                                 return_accum_roi=False):
     # Calculate the ROI for each compounding period
     term_roi = annual_roi / compounding_frequency
     # Calculate the periodic contribution
@@ -31,7 +31,7 @@ def calculate_accumulated_return(principal,
     # Calculate the total amount after the specified number of years
     total_amount = principal_term + contribution_term
 
-    if return_acum_roi:
+    if return_accum_roi:
         return round(total_amount, 2), round(accumulated_roi, 2)
     return round(total_amount, 2)
 
