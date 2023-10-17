@@ -54,6 +54,8 @@ def calculate_return_on_investment(principal,
         compounding_frequency = 1
     n_compounds = MONTHS_IN_YEAR // compounding_frequency
     periodic_roi = annual_roi / n_compounds
+    if investment_duration <= retirement_at:
+        raise Exception("Argument error: 'investment_duration' must be greater than 'retirement_at'.")
     retirement_at_months = MONTHS_IN_YEAR * retirement_at
     monthly_contribution = annual_contribution / MONTHS_IN_YEAR
     time_counter = 0
