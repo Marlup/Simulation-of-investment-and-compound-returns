@@ -40,16 +40,16 @@ def adjust_for_inflation(amount, inflation_rate=0.02, years=1):
         inflation_rate = 0.02
     return amount / ((1 + inflation_rate) ** years)
 
-def calculate_return_on_investment(principal,
-                                   annual_roi=0.01,
-                                   compounding_frequency=12,
-                                   annual_contribution=0.0,
-                                   investment_duration=5,
-                                   retirement_at=0,
-                                   retirement_income=0.0,
-                                   retirement_contribution=1200,
-                                   inflation_rate=0.0,
-                                   tax_percentage=0.0):
+def simulate_compound_return(principal,
+                             annual_roi=0.01,
+                             compounding_frequency=12,
+                             annual_contribution=0.0,
+                             investment_duration=5,
+                             retirement_at=0,
+                             retirement_income=0.0,
+                             retirement_contribution=1200,
+                             inflation_rate=0.0,
+                             tax_percentage=0.0):
     if not isinstance(compounding_frequency, int) or (compounding_frequency < 1):
         compounding_frequency = 1
     n_compounds = MONTHS_IN_YEAR // compounding_frequency
@@ -109,8 +109,10 @@ def define_scenario(initial_amounts,
                     for contribution in contributions:
                         for inflation_rate in inflation_rates:
                             for retirement_income in retirement_incomes:
+                              
                                 retirement_contribution = contribution * retirement_contrib_ratio
-                                total_amount, _ = get_return_on_investment(
+                                
+                                total_amount, _ = simulate_compound_return(
                                   principal=initial_amount,
                                   annual_roi=roi,
                                   compounding_frequency=term,
@@ -140,12 +142,16 @@ def build_dataframe(data):
     df = pd.DataFrame(list(data.values()), index=index)
 
     df = df.reset_index()
-    df.columns = ['initial_amount', 
-                'roi', 
-                'term', 
-                'contrib', 
-                'inflation', 
-                'year', 
-                'retir_income', 
-                'amount']
+    df.columns = [
+      'initial_amount', 
+      'roi', 
+      'duration',
+      'term',
+      'contribution', 
+      'inflation_rate',           
+      'retirement_income', 
+      'retirement_contribution',
+      'total_amount'
+    ]
+
     return df
