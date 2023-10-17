@@ -8,12 +8,12 @@ import scipy
 DEFAULT_RETIREMENT_YEARS = 30
 MONTHS_IN_YEAR = 12
 
-def calculate_accumulated_return(principal, 
-                                 annual_roi,
-                                 compounding_frequency,
-                                 annual_contribution, 
-                                 investment_duration, 
-                                 return_accum_roi=False):
+def get_accumulated_return(principal, 
+                           annual_roi,
+                           compounding_frequency,
+                           annual_contribution, 
+                           investment_duration, 
+                           return_accum_roi=False):
     # Calculate the ROI for each compounding period
     term_roi = annual_roi / compounding_frequency
     # Calculate the periodic contribution
@@ -91,41 +91,49 @@ def calculate_return_on_investment(principal,
     return current_balance, periodic_earnings
 def define_scenario(initial_amounts,
                     rois,
-                    years,
+                    investment_durations,
                     terms,
                     contributions,
                     inflation_rates,
-                    retir_years=20,
-                    retir_incomes=1000,
-                    retir_contribs_ratio=0.5
+                    retirement_at=20,
+                    retirement_incomes=1000,
+                    retirement_contrib_ratio=0.5
                    ):
     
     accumulated_money = {}
 
     for initial_amount in initial_amounts:
         for roi in rois:
-            for term in terms:
-                for contribution in contributions:
-                    for year in years:
-                        for retir_income in retir_incomes:
-                            for inflation_rate in inflation_rates:
-                                total_money, _ = calculate_return_on_investment(
-                                    principal=initial_amount,
-                                    annual_roi=roi,
-                                    compounding_frequency=term,
-                                    annual_contribution=contribution,
-                                    investment_duration=year,
-                                    retirement_duration=retir_years,
-                                    retirement_income=retir_income,
-                                    retirement_contribution=contribution * retir_contribs_ratio,
-                                    inflation_rate=inflation_rate
+            for investment_duration in investment_durations:
+                for term in terms:
+                    for contribution in contributions:
+                        for inflation_rate in inflation_rates:
+                            for retirement_income in retirement_incomes:
+                                retirement_contribution = contribution * retirement_contrib_ratio
+                                total_amount, _ = get_return_on_investment(
+                                  principal=initial_amount,
+                                  annual_roi=roi,
+                                  compounding_frequency=term,
+                                  annual_contribution=contribution,
+                                  investment_duration=investment_duration,
+                                  retirement_at=retirement_at,
+                                  retirement_income=retirement_income,
+                                  retirement_contribution=contribution * retirement_contrib_ratio,
+                                  inflation_rate=inflation_rate
                                 )
                                 scenario_key = (
-                                    initial_amount, roi, term, contribution, inflation_rate, year, retir_income
+                                  initial_amount, 
+                                  roi, 
+                                  investment_duration,
+                                  term, 
+                                  contribution, 
+                                  inflation_rate, 
+                                  retirement_income,
+                                  retirement_contribution
                                 )
-                                accumulated_money[scenario_key] = total_money
+                                accumulated_money[scenario_key] = total_amount
 
-    return accumulated_money
+    return accumulated_amount
 
 def build_dataframe(data):
     index = pd.MultiIndex.from_tuples(list(data.keys()))
