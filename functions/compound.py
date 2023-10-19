@@ -58,12 +58,16 @@ def simulate_compound_return(principal,
     # minus contribution commited for investment during retirement 
     eff_retirement_income = retirement_income - retirement_contribution / MONTHS_IN_YEAR
     time_counter = 0
+    on_yield = False
     on_retirement = False
     current_balance = principal
+
+    periodic_balances = [current_balance]
     periodic_earnings = []
     for year in range(investment_duration):
         for month in range(1, MONTHS_IN_YEAR + 1):
             if month % compounding_frequency == 0 and current_balance > 0:
+                on_yield = True
                 interest_earned = current_balance * periodic_roi
                 periodic_earnings.append(interest_earned)
                 current_balance += interest_earned
@@ -80,14 +84,16 @@ def simulate_compound_return(principal,
                     time_counter += 1
             else:
                 current_balance -= retirement_income - monthly_contribution
-        
+          if on_yield:
+            on_yield = False
+            periodic_balances.append(current_balance)
         if inflation_rate != 0.0:
             current_balance = adjust_for_inflation(current_balance, inflation_rate)
 
         if tax_percentage != 0.0:
             yearly_earnings = sum(periodic_earnings[-n_compounds:])
             current_balance -= yearly_earnings * tax_percentage
-
+    periodic_balances.append(current_balance)
     return current_balance, periodic_earnings
 def define_scenario(initial_amounts,
                     rois,
