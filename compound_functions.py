@@ -54,13 +54,16 @@ def simulate_compound_return(principal,
         raise Exception("Argument error: 'investment_duration' must be greater than 'retirement_at'.")
     retirement_at_months = MONTHS_IN_YEAR * retirement_at
     monthly_contribution = annual_contribution / MONTHS_IN_YEAR
+    # Calculate 'effective retirement income', i.e. retirement income 
+    # minus contribution commited for investment during retirement 
+    eff_retirement_income = retirement_income - retirement_contribution / MONTHS_IN_YEAR
     time_counter = 0
     on_retirement = False
     current_balance = principal
     periodic_earnings = []
     for year in range(investment_duration):
         for month in range(1, MONTHS_IN_YEAR + 1):
-            if month % compounding_frequency == 0:
+            if month % compounding_frequency == 0 and current_balance > 0:
                 interest_earned = current_balance * periodic_roi
                 periodic_earnings.append(interest_earned)
                 current_balance += interest_earned
@@ -72,10 +75,11 @@ def simulate_compound_return(principal,
                     if not on_retirement:
                         on_retirement = True
                         monthly_contribution = retirement_contribution / MONTHS_IN_YEAR
+                        current_balance -= eff_retirement_income
                 else:
                     time_counter += 1
             else:
-                current_balance -= retirement_income
+                current_balance -= retirement_income - monthly_contribution
         
         if inflation_rate != 0.0:
             current_balance = adjust_for_inflation(current_balance, inflation_rate)
