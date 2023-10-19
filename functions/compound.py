@@ -94,7 +94,7 @@ def simulate_compound_return(principal,
             yearly_earnings = sum(periodic_earnings[-n_compounds:])
             current_balance -= yearly_earnings * tax_percentage
     periodic_balances.append(current_balance)
-    return current_balance, periodic_earnings
+    return current_balance, periodic_earnings, periodic_balances
 def define_scenario(initial_amounts,
                     rois,
                     investment_durations,
