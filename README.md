@@ -26,12 +26,16 @@ from investment_calculator import calculate_return_on_investment
 # Example usage
 principal = 10000  # Initial principal amount
 annual_roi = 0.05  # Annual return on investment (as a decimal)
+terms = 12 # Months taken until the next earning is yield
+annual_contribution = 1200 # Annual contribution amount for further investing 
 investment_duration = 10  # Investment duration in years
 
 # Call the function
-final_balance, periodic_earnings = calculate_return_on_investment(
+final_balance, periodic_earnings = simulate_compound_return(
     principal,
     annual_roi,
+    terms,
+    annual_contribution,
     investment_duration
 )
 # Print the results
