@@ -85,8 +85,8 @@ def simulate_compound_return(principal,
             else:
                 current_balance -= retirement_income - monthly_contribution
           if on_yield:
-            on_yield = False
-            periodic_balances.append(current_balance)
+              on_yield = False
+              periodic_balances.append(current_balance)
         if inflation_rate != 0.0:
             current_balance = adjust_for_inflation(current_balance, inflation_rate)
 
