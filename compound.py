@@ -2,6 +2,7 @@ import pandas as pd
 from bokeh import plotting as bk
 from bokeh.models import Span, HoverTool, ColumnDataSource
 import numpy as np
+from itertools import product
 
 DEFAULT_RETIREMENT_YEARS = 30
 MONTHS_IN_YEAR = 12
@@ -48,11 +49,11 @@ def simulate_compound_return(
     inc_contribution_rate=0.0,
     investment_duration=60,
     retirement_at=30,
-    retirement_income=500.0,
-    retirement_contribution=1200,
+    monthly_retirement_income=500.0,
     inflation_rate=0.02,
-    tax_rate=0.19,
-    return_time_yields=False
+    tax_rate=0.2,
+    return_time_yields=False,
+    verbose=False
 ):
     if not isinstance(compounding_frequency, int) or (compounding_frequency < 1):
         compounding_frequency = 1
@@ -65,11 +66,11 @@ def simulate_compound_return(
     monthly_contribution = annual_contribution / MONTHS_IN_YEAR
     monthly_inc_contribution_rate = inc_contribution_rate / MONTHS_IN_YEAR
     # Calculate 'effective retirement income', i.e. retirement income 
-    # minus contribution commited for investment during retirement 
-    eff_retirement_income = retirement_income - retirement_contribution / MONTHS_IN_YEAR
+    # minus contribution commited for investment during retirement
     
     periodic_earnings = []
     time_counter = 0
+    default_retirement_contribution = 0.0
     on_retirement = False
     on_yield = False
     current_balance = principal
@@ -79,33 +80,48 @@ def simulate_compound_return(
     #    periodic_earnings = [0.0]
         periodic_balances = []
         periodic_earnings = []
+        info = {}
+        info['contributions'] = []
+        info['before_retirement_contributions'] = []
     
-    for year in range(investment_duration):
+    for _ in range(investment_duration):
         for month in range(1, MONTHS_IN_YEAR + 1):
             if month % compounding_frequency == 0 and current_balance > 0:
                 interest_earned = current_balance * periodic_roi
                 current_balance += interest_earned
                 on_yield = True
-                
-            current_balance += monthly_contribution
             
-            if not on_retirement:
-                if retirement_at_months !=0 and time_counter >= retirement_at_months:
-                    if not on_retirement:
+            # Update balance with retirement income
+            if on_retirement:
+                current_balance -= monthly_retirement_income
+            else:
+            # Check may retire and on retirement
+                if retirement_at_months != 0 and time_counter >= retirement_at_months:
+                    if verbose:
                         print(f"Max monthly contribution {monthly_contribution}")
+                    if not on_retirement:
                         on_retirement = True
-                        monthly_contribution = retirement_contribution / MONTHS_IN_YEAR
-                        current_balance -= eff_retirement_income
+                        
+                        monthly_contribution = default_retirement_contribution
+                        current_balance -= monthly_retirement_income
+            # Increment monthly contribution
                 else:
                     time_counter += 1
                     monthly_contribution = (1 + monthly_inc_contribution_rate) * monthly_contribution
-            else:
-                current_balance -= retirement_income - monthly_contribution
+
+            # Update balance with contribution
+            current_balance += monthly_contribution
+
             if return_time_yields:
                 periodic_balances.append(current_balance)
                 if on_yield or on_retirement:
                     periodic_earnings.append(interest_earned)
                     on_yield = False
+            
+                info['contributions'].append(monthly_contribution)
+                if on_retirement and not info['before_retirement_contributions']:
+                    info['before_retirement_contributions'] = info['contributions']
+            
         if inflation_rate != 0.0:
             current_balance = adjust_by_inflation(current_balance, inflation_rate)
 
@@ -114,13 +130,14 @@ def simulate_compound_return(
             current_balance -= yearly_earnings * tax_rate
             
     if return_time_yields:
-    #    periodic_balances.append(current_balance)
-    #    periodic_earnings.append(interest_earned)
-        return current_balance, periodic_earnings, periodic_balances
+        info['balances'] = periodic_balances
+        info['earnings'] = periodic_earnings
+        
+        return current_balance, info
     return current_balance
 
 # Plot earning and contribution evolutions
-def plot_scenario_bokeh(earnings, balances, principal, w= 400, h=300):
+def plot_scenario_bokeh(earnings, balances, w= 400, h=300):
     plot_e = bk.figure(width=w,
                        height=h,
                        title='Evolution of yields',
@@ -226,51 +243,48 @@ def define_scenario(
     contributions,
     inc_contributions,
     inflation_rates,
-    retirement_at=20,
-    retirement_incomes=1000,
-    retirement_contrib_ratio=0.5,
-    tax_rate=0.25
+    monthly_retirement_incomes,
+    retirement_ats=[20],
+    tax_rates=[0.25]
 ):
-    
     accumulated_amount = {}
+    combs = product(initial_amounts, 
+                    rois,
+                    investment_durations,
+                    terms,
+                    contributions,
+                    inc_contributions,
+                    inflation_rates,
+                    monthly_retirement_incomes,
+                    retirement_ats,
+                    tax_rates
+                   )
+    for (i_a, roi, in_d, t, c, i_c, i_r, m_r_i, r_a, t_r) in combs:
+        total_amount = simulate_compound_return(
+          principal=i_a,
+          annual_roi=roi,
+          compounding_frequency=t,
+          annual_contribution=c,
+          inc_contribution_rate=i_c,
+          investment_duration=in_d,
+          retirement_at=r_a,
+          monthly_retirement_income=m_r_i,
+          inflation_rate=i_r,
+          tax_rate=t_r,
+          return_time_yields=False
+        )
+        scenario_key = (
+          i_a, 
+          roi, 
+          in_d,
+          t, 
+          c, 
+          i_c,
+          i_r, 
+          m_r_i
+        )
 
-    for initial_amount in initial_amounts:
-        for roi in rois:
-            for investment_duration in investment_durations:
-                for term in terms:
-                    for contribution in contributions:
-                        for inflation_rate in inflation_rates:
-                            for retirement_income in retirement_incomes:
-                                for inc_contribution in inc_contributions:
-                                    retirement_contribution = contribution * retirement_contrib_ratio
-
-                                    total_amount = simulate_compound_return(
-                                      principal=initial_amount,
-                                      annual_roi=roi,
-                                      compounding_frequency=term,
-                                      annual_contribution=contribution,
-                                      inc_contribution_rate=inc_contribution,
-                                      investment_duration=investment_duration,
-                                      retirement_at=retirement_at,
-                                      retirement_income=retirement_income,
-                                      retirement_contribution=contribution * retirement_contrib_ratio,
-                                      inflation_rate=inflation_rate,
-                                      tax_rate=tax_rate,
-                                      return_time_yields=False
-                                    )
-                                    scenario_key = (
-                                      initial_amount, 
-                                      roi, 
-                                      investment_duration,
-                                      term, 
-                                      contribution, 
-                                      inc_contribution,
-                                      inflation_rate, 
-                                      retirement_income,
-                                      retirement_contribution
-                                    )
-
-                                    accumulated_amount[scenario_key] = total_amount
+        accumulated_amount[scenario_key] = total_amount
 
     return accumulated_amount
 
@@ -287,8 +301,7 @@ def build_dataframe(data):
       'contribution', 
       'inc_contribution',
       'inflation_rate',
-      'retirement_income', 
-      'retirement_contribution',
+      'monthly_retirement_income', 
       'total_amount'
     ]
     return df
