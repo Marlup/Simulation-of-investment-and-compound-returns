@@ -124,10 +124,11 @@ def simulate_compound_return(
             
         if inflation_rate != 0.0:
             current_balance = adjust_by_inflation(current_balance, inflation_rate)
-
-        if tax_rate != 0.0:
-            yearly_earnings = sum(periodic_earnings[-n_compounds:])
-            current_balance -= yearly_earnings * tax_rate
+        
+        if tax_rate != 0.0 and isinstance(tax_rate, (int, float)):
+            current_balance -=  tax_rate * sum(periodic_earnings[-n_compounds:])
+        elif tax_rate != 0.0 and isinstance(tax_rate, (str, )):
+            current_balance -= apply_taxes(sum(periodic_earnings[-n_compounds:]), tax_rate)
             
     if return_time_yields:
         info['balances'] = periodic_balances
@@ -135,6 +136,27 @@ def simulate_compound_return(
         
         return current_balance, info
     return current_balance
+
+# Tax function
+def apply_taxes(earnings: float, country: str="spain"):
+    tax_value = 0.0
+    if country == "spain":
+        if earnings >= 200_000.0:
+            tax_value += 0.19 * 5_999.99
+            tax_value += 0.21 * 43_999.99
+            tax_value += 0.23 * 149_999.99
+            return tax_value + 0.26 * (earnings - 199_999.99)
+        if earnings >= 50_000.0:
+            tax_value += 0.19 * 5_999.99
+            tax_value += 0.21 * 43_999.99
+            return tax_value + 0.23 * (earnings - 49_999.9)
+        if earnings >= 6_000.0:
+            tax_value += 0.19 * 5_999.99
+            return tax_value + 0.21 * (earnings - 5_999.99)
+        else:
+            return 0.19 * earnings
+    else:
+        return 0.21 * earnings
 
 # Plot earning and contribution evolutions
 def plot_scenario_bokeh(earnings, balances, w= 400, h=300):
@@ -281,7 +303,9 @@ def define_scenario(
           c, 
           i_c,
           i_r, 
-          m_r_i
+          m_r_i,
+          r_a,
+          t_r
         )
 
         accumulated_amount[scenario_key] = total_amount
@@ -302,6 +326,8 @@ def build_dataframe(data):
       'inc_contribution',
       'inflation_rate',
       'monthly_retirement_income', 
+      'retirement_at',
+      'tax_rate',
       'total_amount'
     ]
     return df
