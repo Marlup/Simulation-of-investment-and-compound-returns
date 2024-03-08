@@ -59,11 +59,14 @@ def simulate_compound_return(
     # How many yielding events we have to take to compute taxes. For example: c_f = 1 -> 12 events
     periodic_roi = annual_roi / (MONTHS_IN_YEAR // compounding_frequency)
     if investment_duration <= retirement_at:
-        raise Exception("Argument error: 'investment_duration' must be greater than 'retirement_at'.")
+        #raise Exception("Argument error: 'investment_duration' must be greater than 'retirement_at'.")
+        print("Argument warning: 'investment_duration' must be greater than 'retirement_at'. retirement_at \
+              will be ignored (retirement_at = investment_duration )")
+        retirement_at = investment_duration
     retirement_at_months = MONTHS_IN_YEAR * retirement_at
     monthly_contribution = annual_contribution / MONTHS_IN_YEAR
     monthly_inc_contribution_rate = inc_contribution_rate / MONTHS_IN_YEAR
-    if inflation_rate > 0.0:
+    if inflation_rate >= 0.0:
         monthly_inflation_rate = inflation_rate / MONTHS_IN_YEAR
     
     time_counter = 0
