@@ -19,34 +19,152 @@ INT_TO_TERM_NAME = {
     12: "annual"
 }
 
-def get_compound_return(
-    principal, 
-    annual_roi,
-    yield_frequency,
-    annual_contribution, 
-    investment_duration, 
-    return_accum_roi=False
-):
-    # Calculate the ROI for each compounding period
-    term_roi = annual_roi / yield_frequency
-    # Calculate the periodic contribution
-    periodic_contribution = annual_contribution / yield_frequency
+from collections import deque
 
-    # Calculate the accumulated ROI over the specified number of years
-    accumulated_roi = (1 + term_roi) ** (investment_duration * yield_frequency)
+MONTHS_IN_YEAR = 12
 
-    # Calculate the principal amount after the specified number of years
-    principal_term = principal * accumulated_roi
+from collections import deque
 
-    # Calculate the contribution term
-    contribution_term = (periodic_contribution * (accumulated_roi - 1)) / term_roi
+class CompoundReturnSimulator:
+    def __init__(
+        self,
+        principal,
+        annual_roi=0.05,
+        yield_frequency=12,
+        annual_contribution=100.0,
+        inc_contribution_rate=0.0,
+        investment_duration=60,
+        retirement_at=30,
+        monthly_retirement_income=500.0,
+        inflation_rate=0.02,
+        tax="",
+        return_series=False,
+        verbose=False,
+    ):
+        self.principal = principal
+        self.annual_roi = annual_roi
+        self.yield_frequency = max(1, yield_frequency)
+        self.annual_contribution = annual_contribution
+        self.inc_contribution_rate = inc_contribution_rate
+        self.investment_duration = investment_duration
+        self.retirement_at = min(retirement_at, investment_duration)
+        self.monthly_retirement_income = monthly_retirement_income
+        self.inflation_rate = inflation_rate
+        self.tax = tax
+        self.return_series = return_series
+        self.verbose = verbose
 
-    # Calculate the total amount after the specified number of years
-    total_amount = principal_term + contribution_term
+        self.n_yields_per_year = MONTHS_IN_YEAR // self.yield_frequency
+        self.periodic_roi = self.annual_roi / self.n_yields_per_year
+        self.retirement_start_month = self.retirement_at * MONTHS_IN_YEAR
+        self.monthly_contribution = self.annual_contribution / MONTHS_IN_YEAR
+        self.monthly_increment = self.inc_contribution_rate / MONTHS_IN_YEAR
 
-    if return_accum_roi:
-        return round(total_amount, 2), round(accumulated_roi, 2)
-    return round(total_amount, 2)
+        self.current_balance = principal
+        self.time_counter = 0
+        self.on_retirement = False
+        self.earnings_window = deque(maxlen=self.n_yields_per_year)
+
+        self.info = {}
+        if self.return_series:
+            self._init_series_storage()
+
+    def _init_series_storage(self):
+        self.contributions = []
+        self.before_retirement_contributions = []
+        self.gross_earnings = []
+        self.net_earnings = []
+        self.inflation_from_earnings = []
+        self.tax_from_earnings = []
+        self.balances = []
+
+    def simulate(self):
+        for year in range(self.investment_duration):
+            for month in range(1, MONTHS_IN_YEAR + 1):
+                is_yield_period = (month % self.yield_frequency == 0) and self.current_balance > 0
+
+                if is_yield_period:
+                    self._apply_yield()
+
+                self._check_retirement()
+
+                self._process_contributions_and_retirement()
+
+                self._apply_inflation_to_balance()
+
+                if not self.on_retirement:
+                    self._increment_contribution()
+
+                if self.return_series:
+                    self._track_series_data(is_yield_period)
+
+                self.time_counter += 1
+
+            if self.tax:
+                self.current_balance -= get_tax_amount(sum(self.earnings_window), 1, self.tax)
+
+        self._finalize_results()
+        return self.get_result()
+
+    def _apply_yield(self):
+        gross = self.current_balance * self.periodic_roi
+        inflation = get_inflation_amount(gross, self.n_yields_per_year, self.inflation_rate)
+        net = gross - inflation
+        self.earnings_window.append(net)
+        self.current_balance += gross
+        self.last_gross = gross
+        self.last_net = net
+        self.last_inflation = inflation
+
+    def _check_retirement(self):
+        if not self.on_retirement and self.time_counter >= self.retirement_start_month:
+            if self.verbose:
+                print(f"Max monthly contribution reached: {self.monthly_contribution}")
+            self.on_retirement = True
+            self.monthly_contribution = 0.0
+
+    def _process_contributions_and_retirement(self):
+        retirement_outflow = self.monthly_retirement_income if self.on_retirement else 0.0
+        self.current_balance += self.monthly_contribution - retirement_outflow
+
+    def _apply_inflation_to_balance(self):
+        if self.inflation_rate > 0.0:
+            self.current_balance -= get_inflation_amount(self.current_balance, MONTHS_IN_YEAR, self.inflation_rate)
+
+    def _increment_contribution(self):
+        if self.monthly_increment > 0.0 and self.current_balance > 0.0:
+            self.monthly_contribution += get_contribution_inc(self.monthly_contribution, self.monthly_increment)
+
+    def _track_series_data(self, is_yield_period):
+        if is_yield_period or self.on_retirement:
+            tax_amount = get_tax_amount(self.last_net, self.n_yields_per_year, self.tax)
+            self.gross_earnings.append(self.last_gross)
+            self.net_earnings.append(self.last_net - tax_amount)
+            self.inflation_from_earnings.append(self.last_inflation)
+            self.tax_from_earnings.append(tax_amount)
+
+        self.balances.append(self.current_balance)
+        self.contributions.append(self.monthly_contribution)
+
+        if self.on_retirement and not self.before_retirement_contributions:
+            self.before_retirement_contributions = self.contributions.copy()
+
+    def _finalize_results(self):
+        if self.return_series:
+            self.info.update({
+                "contributions": self.contributions,
+                "before_retirement_contributions": self.before_retirement_contributions,
+                "gross_earnings": self.gross_earnings,
+                "net_earnings": self.net_earnings,
+                "balances": self.balances,
+                "tax_from_earnings": self.tax_from_earnings,
+                "inflation_from_earnings": self.inflation_from_earnings
+            })
+        if len(self.earnings_window) >= 2:
+            self.info["stable_yield"] = self.earnings_window[0] < self.earnings_window[-1]
+
+    def get_result(self):
+        return self.current_balance, self.info
 
 def simulate_compound_return(
     principal,
@@ -58,137 +176,131 @@ def simulate_compound_return(
     retirement_at=30,
     monthly_retirement_income=500.0,
     inflation_rate=0.02,
-    tax="",
+    tax_rate="",
     return_series=False,
     check_sustained_yield=True,
     verbose=False
 ):
-    """
-    Note. The criteria 'taxes after inflation' is applied.
-    """
-    if not isinstance(yield_frequency, int) or (yield_frequency < 1):
+    if not isinstance(yield_frequency, int) or yield_frequency < 1:
         print(f"Yield frequency changed from {yield_frequency} to 1")
         yield_frequency = 1
+
     if investment_duration <= retirement_at:
-        #raise Exception("Argument error: 'investment_duration' must be greater than 'retirement_at'.")
-        print("\nArgument warning: 'investment_duration' must be greater than 'retirement_at'. retirement_at \
-will be ignored (retirement_at = investment_duration) \n")
+        print("\nArgument warning: 'investment_duration' must be greater than 'retirement_at'. retirement_at will be ignored\n")
         retirement_at = investment_duration
-    # Annual yields in yield_frequency
-    n_annual_yields =  MONTHS_IN_YEAR // yield_frequency
-        
-    periodic_roi = annual_roi / n_annual_yields
-    retirement_at_months = MONTHS_IN_YEAR * retirement_at
+
+    n_yields_per_year = MONTHS_IN_YEAR // yield_frequency
+    periodic_roi = annual_roi / n_yields_per_year
+    retirement_start_month = retirement_at * MONTHS_IN_YEAR
     monthly_contribution = annual_contribution / MONTHS_IN_YEAR
-    monthly_inc_contribution_rate = inc_contribution_rate / MONTHS_IN_YEAR
-    time_counter = 0
-    default_retirement_contribution = 0.0
-    on_retirement = False
+    monthly_increment = inc_contribution_rate / MONTHS_IN_YEAR
+
     current_balance = principal
-    deque_earnings = deque(maxlen=n_annual_yields)
-    
+    time_counter = 0
+    on_retirement = False
+    earnings_window = deque(maxlen=n_yields_per_year)
+
     info = {}
     if return_series:
         contributions = []
         before_retirement_contributions = []
         gross_earnings = []
         net_earnings = []
-        earnings_after_inflation = []
+        inflation_from_earnings = []
         tax_from_earnings = []
-        periodic_balances = []
+        balances = []
+
     for year in range(investment_duration):
         for month in range(1, MONTHS_IN_YEAR + 1):
-            #print(f"year {year} - month {month} : {monthly_contribution}")
-            
-            on_yield = month % yield_frequency == 0 and current_balance > 0
-            if on_yield:
-                
-                gross_earning = current_balance * periodic_roi
-                #print(f"\n\tyear {year} - month {month}: {earning}")
-                inflation_from_earning = get_inflation_amount(gross_earning, 
-                                                              n_annual_yields, 
-                                                              inflation_rate
-                                                             )
-                # Compute and store annual earning after inflation
-                earning_after_inflation = gross_earning - inflation_from_earning
-                deque_earnings.append(earning_after_inflation)
-                
-                # Update balance by gross earning (We update the balance with gross earning,
-                # after that the taxes and inflation reduction will be applied)
-                current_balance += gross_earning
-            
-            if not on_retirement:
-                # Check start of retirement
-                if retirement_at_months != 0 and time_counter >= retirement_at_months:
-                    if verbose:
-                        print(f"Max monthly contribution {monthly_contribution}")
-                    if not on_retirement:
-                        on_retirement = True
-                        monthly_contribution = default_retirement_contribution
-                else:
-                    time_counter += 1
+            is_yield_period = (month % yield_frequency == 0) and current_balance > 0
 
-            # Update balance by contribution and retirement income
-            retirement_income = int(on_retirement) * monthly_retirement_income
-            current_balance += monthly_contribution - retirement_income
-            
-            # Update balance by inflation
-            if inflation_rate > 0.0:
-                current_balance -= get_inflation_amount(current_balance, 
-                                                        MONTHS_IN_YEAR, 
-                                                        inflation_rate
-                                                       )
-            # Update monthly contribution by increment
-            if monthly_inc_contribution_rate > 0.0 and current_balance > 0.0:
-                monthly_contribution += get_contribution_inc(monthly_contribution, 
-                                                             monthly_inc_contribution_rate
-                                                            )
-            # Term based storage
-            if not return_series:
-                continue
-            if on_yield or on_retirement:
-                tax_from_earning = get_tax_amount(earning_after_inflation, 
-                                                  n_annual_yields,
-                                                  tax
-                                                 )
-                # Store earning types:
-                # Gross earnings
-                gross_earnings.append(gross_earning)
-                # Net earnings
-                net_earning = earning_after_inflation - tax_from_earning
-                net_earnings.append(net_earning)
-                # Inflation from earnings
-                earnings_after_inflation.append(inflation_from_earning)
-                # Taxes from earnings
-                tax_from_earnings.append(tax_from_earning)
-            
-            # Net balance
-            periodic_balances.append(current_balance)
-            # Contribution
-            contributions.append(monthly_contribution)
-            
-            if on_retirement and not before_retirement_contributions:
-                before_retirement_contributions = contributions
-                
-        # Apply taxes at the end of the year
-        if tax:
-            current_balance -= get_tax_amount(sum(deque_earnings), 
-                                              1, 
-                                              tax
-                                             )
-    if deque_earnings[0] < deque_earnings[-1]:
-        info["stable_yield"] = True
-    else:
-        info["stable_yield"] = False
-    info['contributions'] = contributions
-    info['before_retirement_contributions'] = before_retirement_contributions
+            if is_yield_period:
+                current_balance, earning_after_inflation = apply_yield(
+                    current_balance, periodic_roi, inflation_rate, n_yields_per_year, earnings_window
+                )
+
+            on_retirement, monthly_contribution = check_retirement(
+                time_counter, retirement_start_month, on_retirement, monthly_contribution, verbose
+            )
+
+            current_balance = process_contribution_and_retirement(
+                current_balance, monthly_contribution, on_retirement, monthly_retirement_income
+            )
+
+            current_balance = adjust_for_inflation(current_balance, inflation_rate)
+
+            if not on_retirement:
+                monthly_contribution = increment_contribution(
+                    monthly_contribution, monthly_increment, current_balance
+                )
+
+            if return_series:
+                if is_yield_period or on_retirement:
+                    tax_amount = get_tax_amount(earning_after_inflation, n_yields_per_year, tax_rate)
+                    net = earning_after_inflation - tax_amount
+
+                    gross_earnings.append(current_balance * periodic_roi)
+                    net_earnings.append(net)
+                    inflation_from_earnings.append(get_inflation_amount(current_balance * periodic_roi, n_yields_per_year, inflation_rate))
+                    tax_from_earnings.append(tax_amount)
+
+                balances.append(current_balance)
+                contributions.append(monthly_contribution)
+
+                if on_retirement and not before_retirement_contributions:
+                    before_retirement_contributions = contributions.copy()
+
+            time_counter += 1
+
+        if tax_rate:
+            current_balance -= get_tax_amount(sum(earnings_window), 1, tax_rate)
+
+    info["stable_yield"] = earnings_window[0] < earnings_window[-1] if check_sustained_yield and len(earnings_window) > 1 else None
+
     if return_series:
-        info['gross_earnings'] = gross_earnings
-        info['net_earnings'] = net_earnings
-        info['balances'] = periodic_balances
-        info['tax_from_earnings'] = tax_from_earnings
-        info['inflation_from_earnings'] = inflation_from_earning
+        info.update({
+            "contributions": contributions,
+            "before_retirement_contributions": before_retirement_contributions,
+            "gross_earnings": gross_earnings,
+            "net_earnings": net_earnings,
+            "balances": balances,
+            "tax_from_earnings": tax_from_earnings,
+            "inflation_from_earnings": inflation_from_earnings
+        })
+
     return current_balance, info
+
+def apply_yield(balance, roi, inflation_rate, n_yields, earnings_window):
+    gross = balance * roi
+    inflation = get_inflation_amount(gross, n_yields, inflation_rate)
+    net_after_inflation = gross - inflation
+    earnings_window.append(net_after_inflation)
+    balance += gross
+    return balance, net_after_inflation
+
+
+def check_retirement(counter, retirement_month, on_retirement, contribution, verbose):
+    if not on_retirement and counter >= retirement_month:
+        if verbose:
+            print(f"Max monthly contribution reached: {contribution}")
+        return True, 0.0
+    return on_retirement, contribution
+
+
+def process_contribution_and_retirement(balance, contribution, on_retirement, retirement_income):
+    outflow = retirement_income if on_retirement else 0.0
+    return balance + contribution - outflow
+
+
+def adjust_for_inflation(balance, inflation_rate):
+    return balance - get_inflation_amount(balance, MONTHS_IN_YEAR, inflation_rate)
+
+
+def increment_contribution(contribution, increment, balance):
+    if increment > 0.0 and balance > 0.0:
+        return contribution + (increment * contribution)
+    return contribution
+
 
 def get_inflation_amount(amount: float, n_yields: int=1, inflation: float=0.02, years: int=1):
     adjusted_inflation = inflation / n_yields
@@ -196,14 +308,13 @@ def get_inflation_amount(amount: float, n_yields: int=1, inflation: float=0.02, 
         adjusted_inflation = 0.02 / n_yields
     return amount * (1 - 1 / (1 + adjusted_inflation) ** years)
 
-# Tax function
-def get_tax_amount(earnings, n_yields, tax):
-    if isinstance(tax, (int, float)):
-        #return tax_rate * sum(earnings[-compunds:])
-        return tax * earnings / n_yields
-    elif isinstance(tax, (str, )):
-        #return _compute_taxes(sum(earnings[-compunds:]), tax_rate)
-        return _compute_taxes(earnings, n_yields, tax)
+
+def get_tax_amount(earnings, n_yields, tax_rate):
+    if isinstance(tax_rate, (int, float)):
+        return tax_rate * earnings / n_yields
+    elif isinstance(tax_rate, str):
+        return _compute_taxes(earnings, n_yields, tax_rate)
+
 def _compute_taxes(earnings: float, n_yields: int, country: str="spain"):
     tax_value = 0.0
     if country == "spain":
@@ -215,17 +326,13 @@ def _compute_taxes(earnings: float, n_yields: int, country: str="spain"):
         if earnings >= 50_000.0:
             tax_value += 0.19 * 5_999.99
             tax_value += 0.21 * 43_999.99
-            return tax_value + 0.23 * (earnings - 49_999.9) / n_yields
+            return (tax_value + 0.23 * (earnings - 49_999.9)) / n_yields
         if earnings >= 6_000.0:
             tax_value += 0.19 * 5_999.99
-            return tax_value + 0.21 * (earnings - 5_999.99) / n_yields
+            return (tax_value + 0.21 * (earnings - 5_999.99)) / n_yields
         else:
             return 0.19 * earnings / n_yields
-    else:
-        return 0.21 * earnings / n_yields
-
-def get_contribution_inc(contribution, increment_rate):
-    return increment_rate * contribution
+    return 0.21 * earnings / n_yields
 
 # Plot earning and contribution evolutions
 def plot_scenario_bokeh(earnings, balances, w= 400, h=300):
