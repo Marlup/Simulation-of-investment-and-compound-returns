@@ -1,0 +1,7 @@
+bokeh==3.3.4  # or latest stable
+flask
+numpy
+pandas
+ipykernel
+matplotlib
+seaborn

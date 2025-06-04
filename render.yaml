@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: bokeh-app
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: bokeh serve myapp.py --port 10000 --allow-websocket-origin bokeh-app.onrender.com

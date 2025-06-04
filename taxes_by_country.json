@@ -1,0 +1,231 @@
+{
+    "countries": {
+      "spain": {
+        "tax_brackets": [
+          { "upper_limit": 6000.0, "rate": 0.19 },
+          { "upper_limit": 50000.0, "rate": 0.21 },
+          { "upper_limit": 200000.0, "rate": 0.23 },
+          { "upper_limit": null, "rate": 0.26 }
+        ]
+      },
+      "france": {
+        "tax_brackets": [
+          { "upper_limit": 9700.0, "rate": 0.0 },
+          { "upper_limit": 27000.0, "rate": 0.11 },
+          { "upper_limit": 73000.0, "rate": 0.30 },
+          { "upper_limit": 157000.0, "rate": 0.41 },
+          { "upper_limit": null, "rate": 0.45 }
+        ]
+      },
+      "germany": {
+        "tax_brackets": [
+          { "upper_limit": 10908.0, "rate": 0.0 },
+          { "upper_limit": 62810.0, "rate": 0.20 },
+          { "upper_limit": 277825.0, "rate": 0.42 },
+          { "upper_limit": null, "rate": 0.45 }
+        ]
+      },
+      "italy": {
+        "tax_brackets": [
+          { "upper_limit": 15000.0, "rate": 0.23 },
+          { "upper_limit": 28000.0, "rate": 0.25 },
+          { "upper_limit": 50000.0, "rate": 0.35 },
+          { "upper_limit": null, "rate": 0.43 }
+        ]
+      },
+      "portugal": {
+        "tax_brackets": [
+          { "upper_limit": 7479.0, "rate": 0.145 },
+          { "upper_limit": 11284.0, "rate": 0.23 },
+          { "upper_limit": 15992.0, "rate": 0.265 },
+          { "upper_limit": 20700.0, "rate": 0.285 },
+          { "upper_limit": 26355.0, "rate": 0.35 },
+          { "upper_limit": 38632.0, "rate": 0.37 },
+          { "upper_limit": 50483.0, "rate": 0.43 },
+          { "upper_limit": null, "rate": 0.45 }
+        ]
+      },
+      "belgium": {
+        "tax_brackets": [
+          { "upper_limit": 13540.0, "rate": 0.25 },
+          { "upper_limit": 23900.0, "rate": 0.40 },
+          { "upper_limit": 41360.0, "rate": 0.45 },
+          { "upper_limit": null, "rate": 0.50 }
+        ]
+      },
+      "netherlands": {
+        "tax_brackets": [
+          { "upper_limit": 69508.0, "rate": 0.37 },
+          { "upper_limit": null, "rate": 0.495 }
+        ]
+      },
+      "sweden": {
+        "tax_brackets": [
+          { "upper_limit": 202100.0, "rate": 0.0 },
+          { "upper_limit": 537200.0, "rate": 0.20 },
+          { "upper_limit": null, "rate": 0.25 }
+        ]
+      },
+      "norway": {
+        "tax_brackets": [
+          { "upper_limit": 180800.0, "rate": 0.019 },
+          { "upper_limit": 254500.0, "rate": 0.042 },
+          { "upper_limit": 639750.0, "rate": 0.132 },
+          { "upper_limit": 999550.0, "rate": 0.162 },
+          { "upper_limit": null, "rate": 0.192 }
+        ]
+      },
+      "denmark": {
+        "tax_brackets": [
+          { "upper_limit": 544800.0, "rate": 0.1211 },
+          { "upper_limit": null, "rate": 0.15 }
+        ]
+      },
+      "finland": {
+        "tax_brackets": [
+          { "upper_limit": 18000.0, "rate": 0.06 },
+          { "upper_limit": 27000.0, "rate": 0.17 },
+          { "upper_limit": 45000.0, "rate": 0.21 },
+          { "upper_limit": 75000.0, "rate": 0.31 },
+          { "upper_limit": null, "rate": 0.34 }
+        ]
+      },
+      "ireland": {
+        "tax_brackets": [
+          { "upper_limit": 36800.0, "rate": 0.20 },
+          { "upper_limit": null, "rate": 0.40 }
+        ]
+      },
+      "greece": {
+        "tax_brackets": [
+          { "upper_limit": 20000.0, "rate": 0.22 },
+          { "upper_limit": 30000.0, "rate": 0.29 },
+          { "upper_limit": 40000.0, "rate": 0.37 },
+          { "upper_limit": null, "rate": 0.45 }
+        ]
+      },
+      "switzerland": {
+        "tax_brackets": [
+          { "upper_limit": 8352.0, "rate": 0.0 },
+          { "upper_limit": 11600.0, "rate": 0.01 },
+          { "upper_limit": 13300.0, "rate": 0.02 },
+          { "upper_limit": 15300.0, "rate": 0.03 },
+          { "upper_limit": 17800.0, "rate": 0.04 },
+          { "upper_limit": 20500.0, "rate": 0.05 },
+          { "upper_limit": 78000.0, "rate": 0.06 },
+          { "upper_limit": 103000.0, "rate": 0.08 },
+          { "upper_limit": 134000.0, "rate": 0.10 },
+          { "upper_limit": 176000.0, "rate": 0.11 },
+          { "upper_limit": 755200.0, "rate": 0.13 },
+          { "upper_limit": null, "rate": 0.11 }
+        ]
+      },
+      "austria": {
+        "tax_brackets": [
+          { "upper_limit": 11000.0, "rate": 0.0 },
+          { "upper_limit": 18000.0, "rate": 0.20 },
+          { "upper_limit": 31000.0, "rate": 0.35 },
+          { "upper_limit": 60000.0, "rate": 0.42 },
+          { "upper_limit": 90000.0, "rate": 0.48 },
+          { "upper_limit": 1000000.0, "rate": 0.50 },
+          { "upper_limit": null, "rate": 0.55 }
+        ]
+      },
+      "poland": {
+        "tax_brackets": [
+          { "upper_limit": 120000.0, "rate": 0.12 },
+          { "upper_limit": null, "rate": 0.32 }
+        ]
+      },
+      "czech_republic": {
+        "tax_brackets": [
+          { "upper_limit": 1750000.0, "rate": 0.15 },
+          { "upper_limit": null, "rate": 0.23 }
+        ]
+      },
+      "hungary": {
+        "tax_brackets": [
+          { "upper_limit": null, "rate": 0.15 }
+        ]
+      },
+      "romania": {
+        "tax_brackets": [
+          { "upper_limit": null, "rate": 0.10 }
+        ]
+      },
+      "bulgaria": {
+        "tax_brackets": [
+          { "upper_limit": null, "rate": 0.10 }
+        ]
+      },
+      "croatia": {
+        "tax_brackets": [
+          { "upper_limit": 36000.0, "rate": 0.20 },
+          { "upper_limit": null, "rate": 0.30 }
+        ]
+      },
+      "slovakia": {
+        "tax_brackets": [
+          { "upper_limit": 41000.0, "rate": 0.19 },
+          { "upper_limit": null, "rate": 0.25 }
+        ]
+      },
+      "slovenia": {
+        "tax_brackets": [
+          { "upper_limit": 8500.0, "rate": 0.16 },
+          { "upper_limit": 25000.0, "rate": 0.26 },
+          { "upper_limit": 50000.0, "rate": 0.33 },
+          { "upper_limit": 72000.0, "rate": 0.39 },
+          { "upper_limit": null, "rate": 0.50 }
+        ]
+      },
+      "estonia": {
+        "tax_brackets": [
+          { "upper_limit": null, "rate": 0.20 }
+        ]
+      },
+      "latvia": {
+        "tax_brackets": [
+          { "upper_limit": 20004.0, "rate": 0.20 },
+          { "upper_limit": 78100.0, "rate": 0.23 },
+          { "upper_limit": null, "rate": 0.31 }
+        ]
+      },
+      "lithuania": {
+        "tax_brackets": [
+          { "upper_limit": 101094.0, "rate": 0.20 },
+          { "upper_limit": null, "rate": 0.32 }
+        ]
+      },
+      "cyprus": {
+        "tax_brackets": [
+          { "upper_limit": 19500.0, "rate": 0.0 },
+          { "upper_limit": 28000.0, "rate": 0.20 },
+          { "upper_limit": 36300.0, "rate": 0.25 },
+          { "upper_limit": 60000.0, "rate": 0.30 },
+          { "upper_limit": null, "rate": 0.35 }
+        ]
+      },
+      "luxembourg": {
+        "tax_brackets": [
+          { "upper_limit": 11905.0, "rate": 0.0 },
+          { "upper_limit": 13893.0, "rate": 0.08 },
+          { "upper_limit": 23885.0, "rate": 0.14 },
+          { "upper_limit": 39106.0, "rate": 0.26 },
+          { "upper_limit": 100000.0, "rate": 0.39 },
+          { "upper_limit": null, "rate": 0.42 }
+        ]
+      },
+      "malta": {
+        "tax_brackets": [
+          { "upper_limit": 9100.0, "rate": 0.0 },
+          { "upper_limit": 14500.0, "rate": 0.15 },
+          { "upper_limit": 19500.0, "rate": 0.25 },
+          { "upper_limit": null, "rate": 0.35 }
+        ]
+      }
+    }
+  }
+  
+  
+     
