@@ -5,18 +5,19 @@ from bokeh.models import Span, HoverTool, ColumnDataSource
 
 # Plot earning and contribution evolutions
 def plot_scenario_bokeh(earnings, balances, w=400, h=300):
-    plot_e = bk.figure(width=w,
-                       height=h,
-                       title='Evolution of yields',
-                       tools='hover'
-                       )
+    plot_e = bk.figure(
+        width=w,
+        height=h,
+        title='Evolution of yields',
+        #tools='hover'
+        )
 
     ## Earning plot
     source_e = ColumnDataSource(
-        data=dict(yield_term=np.arange(len(earnings)),
-                  earning=earnings
-                  )
-                  )
+        data=dict(
+            yield_term=np.arange(len(earnings)),
+            earning=earnings
+            ))
 
     curve_e = plot_e.line(x='yield_term',
                           y='earning',
@@ -57,7 +58,7 @@ def plot_scenario_bokeh(earnings, balances, w=400, h=300):
     plot_b = bk.figure(width=w,
                        height=h,
                        title='Evolution of balance',
-                       tools='hover'
+                       #tools='hover'
                       )
 
     source_b = ColumnDataSource(

@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-def build_dataframe(data, columns=None):
+def build_dataframe(data: dict, columns=None):
     if columns is None or not isinstance(columns, (list, tuple)):
         raise ValueError("Columns must be a list of strings.")
     

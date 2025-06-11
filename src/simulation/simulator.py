@@ -1,23 +1,23 @@
 from itertools import product
 from collections import deque
-from typing import List, Tuple
+from typing import List
 
-from taxes.taxes import (
+from src.taxes.taxes import (
     TaxCalculator,
     get_inflation_amount, 
     adjust_for_inflation,
     is_retirement,
 )
 
-from compound.compound import (
-    increment_contribution,
+from src.compound.compound import (
+    get_incremented_contribution,
     check_retirement,
-    compute_interest_data_from_yield,
     get_contribution_inc,
-    update_balance_from_flows
+    update_balance_from_flows,
+    compute_gross_interest
 )
 
-from static.constants import (
+from src.static.constants import (
     MONTHS_IN_YEAR,
     TAX_DATA_FILE,
 )
@@ -55,10 +55,10 @@ class CompoundReturnSimulator:
         self.verbose = verbose
 
         self.n_yields_per_year = MONTHS_IN_YEAR // self.yield_frequency
-        self.periodic_roi = self.annual_roi / self.n_yields_per_year
+        self.adjusted_roi = self.annual_roi / self.n_yields_per_year
         self.retirement_start_month = self.retirement_at * MONTHS_IN_YEAR
         self.monthly_contribution = self.annual_contribution / MONTHS_IN_YEAR
-        self.monthly_increment = self.inc_contribution_rate / MONTHS_IN_YEAR
+        self.adjusted_inc_contribution_rate = self.inc_contribution_rate / MONTHS_IN_YEAR
 
         self.balance = principal
         self.time_counter = 0
@@ -100,17 +100,16 @@ class CompoundReturnSimulator:
 
         self._update_balance_from_flows()
 
-        self._update_balance_from_inflation()
+        self._update_balance_from_taxes()
 
-        self._update_contribution()
+        self._update_balance_from_inflation()
 
         if self.return_series:
             self._track_series_data(is_yield_period)
 
+        self._update_contribution()
+
         self._increment_time_counter()
-
-        self._update_balance_from_taxes()
-
 
     def _is_retirement(self):
         ok = is_retirement(
@@ -125,14 +124,17 @@ class CompoundReturnSimulator:
             self.monthly_contribution = 0.0
 
     def _update_interest_data_from_yield(self):
-        gross_amount, inflation_amount, net_amount = compute_interest_data_from_yield
-        
+        #gross_amount, inflation_amount, net_amount = compute_interest_data_from_yield(self.balance, self.adjusted_roi, self.inflation_rate, self.n_yields_per_year)
+        gross_interest = compute_gross_interest(self.balance, self.adjusted_roi)
+        interest_inflation_amount = get_inflation_amount(gross_interest, self.n_yields_per_year, self.inflation_rate)
+        net_interest_after_inflation = gross_interest - interest_inflation_amount
+    
         # Update earnings window with net amount after inflation
-        self.earnings_window.append(net_amount)
-        self.balance += gross_amount
-        self.last_gross = gross_amount
-        self.last_net = net_amount
-        self.last_inflation = inflation_amount
+        self.earnings_window.append(net_interest_after_inflation)
+        self.balance += gross_interest
+        self.last_gross = gross_interest
+        self.last_net = net_interest_after_inflation
+        self.last_inflation = interest_inflation_amount
 
     def _update_balance_from_flows(self):
         retirement_outflow = self.monthly_retirement_income if self.on_retirement else 0.0
@@ -155,11 +157,11 @@ class CompoundReturnSimulator:
 
     def _update_contribution(self):
         if not self.on_retirement \
-        and self.monthly_increment > 0.0 \
+        and self.adjusted_inc_contribution_rate > 0.0 \
         and self.balance > 0.0:
             self.monthly_contribution += get_contribution_inc(
                 self.monthly_contribution, 
-                self.monthly_increment
+                self.adjusted_inc_contribution_rate
                 )
 
     def _increment_time_counter(self):
@@ -222,10 +224,10 @@ def simulate_compound_return(
         retirement_at = investment_duration
 
     n_yields_per_year = MONTHS_IN_YEAR // yield_frequency
-    periodic_roi = annual_roi / n_yields_per_year
+    adjusted_roi = annual_roi / n_yields_per_year
     retirement_start_month = retirement_at * MONTHS_IN_YEAR
     monthly_contribution = annual_contribution / MONTHS_IN_YEAR
-    monthly_increment = inc_contribution_rate / MONTHS_IN_YEAR
+    adjusted_inc_contribution_rate = inc_contribution_rate / MONTHS_IN_YEAR
 
     current_balance = principal
     time_counter = 0
@@ -247,12 +249,16 @@ def simulate_compound_return(
             is_yield_period = (month % yield_frequency == 0) and current_balance > 0
 
             if is_yield_period:
-                gross_amount, inflation_amount, net_tax_amount = compute_interest_data_from_yield(
-                    current_balance, periodic_roi, inflation_rate, n_yields_per_year
-                    #, earnings_window
-                )
+                #gross_amount, inflation_amount, net_tax_amount = compute_interest_data_from_yield(
+                #    current_balance, adjusted_roi, inflation_rate, n_yields_per_year
+                #    #, earnings_window
+                #)
+                gross_interest = compute_gross_interest(current_balance, adjusted_roi)
+                interest_inflation_amount = get_inflation_amount(gross_interest, n_yields_per_year, inflation_rate)
+                net_interest_after_inflation = gross_interest - interest_inflation_amount
+    
                 # Update earnings window with net amount after inflation
-                current_balance += gross_amount
+                current_balance += gross_interest
             
             on_retirement, monthly_contribution = check_retirement(
                 time_counter, retirement_start_month, on_retirement, monthly_contribution, verbose
@@ -265,20 +271,20 @@ def simulate_compound_return(
             current_balance = adjust_for_inflation(current_balance, inflation_rate)
 
             if not on_retirement:
-                monthly_contribution = increment_contribution(
-                    monthly_contribution, monthly_increment, current_balance
+                monthly_contribution = get_incremented_contribution(
+                    monthly_contribution, adjusted_inc_contribution_rate
                 )
 
             if return_series:
                 if is_yield_period or on_retirement:
-                    tax_amount = get_tax_amount_from_total(net_tax_amount, n_yields_per_year, tax_rate)
-                    net = net_tax_amount - tax_amount
+                    tax_amount = get_tax_amount_from_total(net_interest_after_inflation, n_yields_per_year, tax_rate)
+                    net = net_interest_after_inflation - tax_amount
 
-                    #gross_earnings.append(current_balance * periodic_roi)
-                    gross_earnings.append(gross_amount)
+                    #gross_earnings.append(current_balance * adjusted_roi)
+                    gross_earnings.append(gross_interest)
                     net_earnings.append(net)
-                    #inflation_from_earnings.append(get_inflation_amount(current_balance * periodic_roi, n_yields_per_year, inflation_rate))
-                    inflation_from_earnings.append(inflation_amount)
+                    #inflation_from_earnings.append(get_inflation_amount(current_balance * adjusted_roi, n_yields_per_year, inflation_rate))
+                    inflation_from_earnings.append(interest_inflation_amount)
                     tax_from_earnings.append(tax_amount)
 
                 balances.append(current_balance)

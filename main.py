@@ -7,7 +7,8 @@ from bokeh.models.tools import HoverTool, Span
 from bokeh.plotting import figure
 import numpy as np
 
-from src.compound.compound import run_simulation
+from src.simulation.simulator import run_simulation
+
 
 # Valores iniciales
 initial_params = dict(
@@ -76,8 +77,8 @@ def update(attr, old, new):
             retirement_at=s_retirement_at.value,
             tax=new_tax
         )
-        balances, gross_earnings, net_earnings, tax_from_earnings = run_simulation(**new_params)
-        with open("./static/sim_params.json", "w") as sim_params:
+        balances, _, net_earnings, _ = run_simulation(**new_params)
+        with open("./data/sim_params.json", "w") as sim_params:
             json.dump(new_params, sim_params)
 
         source_earnings.data = dict(

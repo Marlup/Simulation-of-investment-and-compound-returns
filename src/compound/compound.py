@@ -1,25 +1,18 @@
 from typing import List
 
-from taxes.taxes import TaxCalculator
-
-from taxes.taxes import (
-    get_inflation_amount, 
+from src.taxes.taxes import (
+    get_inflation_amount
 )
 
 from src.static.constants import (
-    INT_TO_TERM_NAME, 
-    DEFAULT_CURRENCY,
     MONTHS_IN_YEAR,
-    DEFAULT_RETIREMENT_YEARS
 )
-
 
 def compute_interest_data_from_yield(
         balance: float, 
         roi: float,
         inflation_rate: float, 
         n_yields: int, 
-        #earnings_window: List[int]
         ):
     gross_interest = compute_gross_interest(balance, roi)
     inflation_amount = get_inflation_amount(gross_interest, n_yields, inflation_rate)
@@ -58,9 +51,9 @@ def update_balance_from_flows(
 def adjust_for_inflation(balance, inflation_rate):
     return balance - get_inflation_amount(balance, MONTHS_IN_YEAR, inflation_rate)
 
-def increment_contribution(contribution: float, increment: float, balance: float):
-    if increment > 0.0 and balance > 0.0:
-        return contribution + (increment * contribution)
+def get_incremented_contribution(contribution: float, increment: float):
+    if contribution > 0.0 and increment > 0.0:
+        return contribution * (1 + increment)
     return contribution
 
 def get_contribution_inc(monthly_contribution: float, monthly_increment: float):
